@@ -74,14 +74,18 @@ EOF
 ## Quick install (Engram)
 
 ```bash
-# Install Engram
-go install github.com/Gentleman-Programming/engram@latest
+git clone https://github.com/deuriib/hermes-memory-providers.git
+cd hermes-memory-providers
+mise run bootstrap    # installs tools + deps + engram plugin
+```
 
-# Install the plugin
-cp -r engram/ ~/.hermes/hermes-agent/plugins/memory/engram/
+Individual commands:
 
-# Activate
-hermes memory set engram
+```bash
+mise run list          # show available and installed plugins
+mise run install engram # install a plugin
+mise run uninstall engram [--purge]  # remove a plugin
+mise run update [plugin] # update from repo (git pull + reinstall)
 ```
 
 Requires `engram serve` running at `http://127.0.0.1:7437`.

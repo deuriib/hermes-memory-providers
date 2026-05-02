@@ -37,13 +37,15 @@ go install github.com/Gentleman-Programming/engram@latest
 ### 2. Install the plugin
 
 ```bash
-cp -r engram/ ~/.hermes/hermes-agent/plugins/memory/engram/
+mise run bootstrap    # install tools + deps + plugin in one step
 ```
 
-Or symlink for development:
+Or step by step:
 
 ```bash
-ln -s engram/ ~/.hermes/hermes-agent/plugins/memory/engram/
+mise install
+uv sync
+mise run install engram   # or: bin/hm-install engram
 ```
 
 ### 3. Activate

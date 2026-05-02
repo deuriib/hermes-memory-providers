@@ -53,12 +53,17 @@ cp -r <plugin>/ ~/.hermes/hermes-agent/plugins/memory/<plugin>/
 ## Testing locally
 
 ```bash
-# Symlink for live development
-ln -s ~/Work/engram-memory/<plugin>/ \
-  ~/.hermes/hermes-agent/plugins/memory/<plugin>/
+# Via mise tasks
+mise run install engram      # install
+mise run uninstall engram    # remove
+mise run update engram       # pull + reinstall
+mise run list                # show all
 
-# Verify registration
-hermes memory list
+# Direct bin scripts (don't need mise)
+bin/hm-install engram
+bin/hm-uninstall engram --purge
+bin/hm-update
+bin/hm-list
 ```
 
 ## Engram plugin notes

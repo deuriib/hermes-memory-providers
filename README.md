@@ -2,7 +2,7 @@
 
 **Plug in memory. Never explain yourself twice.**
 
-A collection of memory provider plugins for [Hermes Agent](https://github.com/Gentleman-Programming/hermes-agent). Swap the backend, keep the workflow.
+A collection of memory provider plugins for [Hermes Agent](https://github.com/NousResearch/hermes-agent). Swap the backend, keep the workflow.
 
 ## The problem
 

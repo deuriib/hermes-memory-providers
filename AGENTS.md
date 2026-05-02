@@ -9,7 +9,7 @@
 
 ## What this repo is
 
-Monorepo of memory provider plugins for [Hermes Agent](https://github.com/Gentleman-Programming/hermes-agent). Each plugin implements the `MemoryProvider` ABC and integrates a different memory backend.
+Monorepo of memory provider plugins for [Hermes Agent](https://github.com/NousResearch/hermes-agent). Each plugin implements the `MemoryProvider` ABC and integrates a different memory backend.
 
 ## Current plugins
 

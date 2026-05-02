@@ -1,6 +1,6 @@
 # Hermes Engram Memory Provider
 
-Persistent cross-session memory for [Hermes Agent](https://github.com/Gentleman-Programming/hermes-agent) via the [Engram](https://github.com/Gentleman-Programming/engram) HTTP API.
+Persistent cross-session memory for [Hermes Agent](https://github.com/NousResearch/hermes-agent) via the [Engram](https://github.com/Gentleman-Programming/engram) HTTP API.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 

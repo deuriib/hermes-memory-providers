@@ -1,5 +1,12 @@
 # Hermes Memory Providers — Agent Guidelines
 
+## Project Info
+
+| | |
+|---|---|
+| **Path** | `~/Work/hermes-memory-providers/` |
+| **Remote** | `https://github.com/deuriib/hermes-memory-providers.git` |
+
 ## What this repo is
 
 Monorepo of memory provider plugins for [Hermes Agent](https://github.com/Gentleman-Programming/hermes-agent). Each plugin implements the `MemoryProvider` ABC and integrates a different memory backend.

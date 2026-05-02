@@ -1,4 +1,4 @@
-# Hermes Memory Providers — Agent Guidelines
+# Hermes Plugins — Agent Guidelines
 
 ## Project Info
 
@@ -9,47 +9,54 @@
 
 ## What this repo is
 
-A curated collection of memory provider plugins for [Hermes Agent](https://github.com/NousResearch/hermes-agent). Each plugin implements the `MemoryProvider` abstract base class to integrate different memory backends, enabling persistent memory across Hermes sessions with your preferred storage solution.
+A curated monorepo of plugins for [Hermes Agent](https://github.com/NousResearch/hermes-agent). Organized by category to extend Hermes with memory providers, tools, connectors, and workflows.
 
-**Why this matters:** Hermes Agent's memory system is pluggable by design. Whether you prefer local SQLite, cloud databases, or specialized vector stores, this monorepo provides battle-tested integrations that just work.
+**Why this matters:** Hermes Agent is designed to be extensible. Instead of hunting scattered repositories, this monorepo provides battle-tested plugins with consistent structure, documentation, and quality standards.
 
-## Current plugins
+## Plugin Categories
 
+### Memory Providers
 | Plugin | Backend | Status |
 |--------|---------|--------|
-| `engram/` | Engram HTTP API (Go/SQLite) | Stable |
+| `memory/engram/` | Engram HTTP API (Go/SQLite) | Stable |
+
+### Tools & Connectors
+*Coming soon — submit yours!*
 
 ## Adding a new plugin
 
 ```
 hermes-memory-providers/
   plugins/
-    engram/         ← one directory per plugin
-    __init__.py     ← implements MemoryProvider
-    client.py       ← backend client
-    schemas.py      ← tool definitions
-    plugin.yaml     ← plugin metadata
-    README.md       ← plugin-specific docs
+    category/              ← memory, tools, connectors, workflows
+      plugin-name/         ← one directory per plugin
+        __init__.py        ← main class + register() function
+        client.py          ← backend client (if needed)
+        schemas.py         ← tool/API definitions
+        plugin.yaml        ← metadata (name, version, type)
+        README.md          ← usage & setup docs
+      DESCRIPTION.md       ← category overview
 ```
 
 ### Plugin structure requirements
 
 1. **`__init__.py`** must expose:
-   - `register(ctx)` — called by Hermes to register the provider
-   - `EngramMemoryProvider` — class implementing `MemoryProvider` ABC
+   - `register(ctx)` — called by Hermes to register the plugin
+   - Main class implementing the appropriate interface
 
-2. **`client.py`** wraps the backend HTTP API
+2. **`client.py`** wraps backend APIs (if applicable)
 
-3. **`plugin.yaml`** frontmatter:
+3. **`plugin.yaml`** metadata:
 ```yaml
 name: <plugin-name>
 version: 1.0.0
-type: memory_provider
+type: memory_provider | tool | connector | workflow
+category: memory | tools | connectors | workflows
 ```
 
 4. **Deploy** with:
 ```bash
-cp -r <plugin>/ ~/.hermes/hermes-agent/plugins/memory/<plugin>/
+cp -r <category>/<plugin>/ ~/.hermes/hermes-agent/plugins/<category>/<plugin>/
 ```
 
 ## Code style
@@ -64,14 +71,14 @@ cp -r <plugin>/ ~/.hermes/hermes-agent/plugins/memory/<plugin>/
 
 ```bash
 # Via mise tasks
-mise run install engram      # install
-mise run uninstall engram    # remove
-mise run update engram       # pull + reinstall
-mise run list                # show all
+mise run install memory/engram      # install by category/name
+mise run uninstall memory/engram    # remove
+mise run update memory/engram       # pull + reinstall
+mise run list                       # show all by category
 
 # Direct bin scripts (don't need mise)
-bin/hm-install engram
-bin/hm-uninstall engram --purge
+bin/hm-install memory/engram
+bin/hm-uninstall memory/engram --purge
 bin/hm-update
 bin/hm-list
 ```

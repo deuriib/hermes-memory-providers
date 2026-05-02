@@ -1,82 +1,101 @@
-# Hermes Memory Providers
+# Hermes Plugins
 
-> Persistent memory backends for [Hermes Agent](https://github.com/NousResearch/hermes-agent) — because great AI assistants remember everything.
+**Extend Hermes Agent with curated plugins — memory, tools, connectors, and workflows.**
 
-## Why Memory Providers?
+## What this is
 
-Hermes Agent is designed to learn and grow with you across sessions. But where should it store what it learns? This monorepo gives you options:
+A monorepo of high-quality plugins for [Hermes Agent](https://github.com/NousResearch/hermes-agent). Instead of searching scattered repositories, find everything here:
 
-- **Local-first** with SQLite and file-based storage
-- **Cloud-native** with database integrations  
-- **Specialized** with vector databases and embedding stores
-- **Custom** — build your own following our plugin architecture
+- **🧠 Memory** — Persistent storage backends (SQLite, cloud, vector DBs)
+- **🛠 Tools** — Custom functionality and integrations
+- **🔗 Connectors** — APIs, databases, external services
+- **⚡ Workflows** — Multi-step automations and patterns
 
-## Available Providers
+## Plugin Categories
 
-| Provider | Backend | Status | Best For |
-|----------|---------|--------|----------|
-| [**Engram**](./plugins/engram/) | Go/SQLite HTTP API | ✅ Stable | Local development, fast queries |
+### Memory Providers
+
+Persistent memory across sessions. [Browse memory plugins →](./plugins/memory/)
+
+| Plugin | Backend | Status |
+|--------|---------|--------|
+| [**Engram**](./plugins/memory/engram/) | Go/SQLite HTTP API | ✅ Stable |
+
+### Tools & Connectors
+
+*Coming soon — submit yours!*
 
 ## Quick Start
 
-### 1. Choose Your Provider
+### 1. Browse Plugins
 
-Browse the `plugins/` directory and pick the memory backend that fits your workflow.
+Explore by category:
+- `plugins/memory/` — Persistent storage backends
+- `plugins/tools/` — Custom functionality (coming soon)
+- `plugins/connectors/` — External integrations (coming soon)
+- `plugins/workflows/` — Automation patterns (coming soon)
 
 ### 2. Install
 
 ```bash
-# Install a specific provider
-./bin/hm-install engram
+# Install by category and name
+./bin/hm-install memory/engram
 
 # Or use mise tasks
-mise run install engram
+mise run install memory/engram
 ```
 
-### 3. Configure Hermes
+### 3. Configure
 
-Your chosen provider will be automatically registered with Hermes Agent on next startup.
+Plugins auto-register with Hermes Agent on startup. See individual plugin READMEs for configuration.
 
 ## For Plugin Developers
 
-### Architecture Requirements
+### Plugin Types & APIs
 
-Every memory provider must implement the `MemoryProvider` ABC with these methods:
-
+**Memory Providers** implement `MemoryProvider` ABC:
 ```python
 class MemoryProvider(ABC):
     @abstractmethod
     async def save(self, observation: dict) -> str: ...
-    
     @abstractmethod
     async def search(self, query: str, **filters) -> list[dict]: ...
-    
-    @abstractmethod
-    async def get(self, id: str) -> dict: ...
+```
+
+**Tool Plugins** register functions via schemas:
+```python
+def register(ctx):
+    ctx.register_tools([search_tool, analyze_tool])
+```
+
+**Connector Plugins** integrate external APIs:
+```python
+class SlackConnector:
+    async def send_message(self, channel: str, text: str): ...
 ```
 
 ### Plugin Structure
 
 ```
-plugins/your-provider/
-├── __init__.py       # Provider class + register() function
-├── client.py         # Backend client implementation  
-├── schemas.py        # Tool definitions for Hermes
+plugins/category/plugin-name/
+├── __init__.py       # Main class + register() function
+├── client.py         # Backend client (if needed)
+├── schemas.py        # Tool/API definitions
 ├── plugin.yaml       # Metadata (name, version, type)
-└── README.md         # Usage docs
+└── README.md         # Usage & setup docs
 ```
 
 ### Development Workflow
 
 ```bash
-# Local testing
-mise run install your-provider
+# Test locally
+mise run install category/plugin-name
 
-# Verify installation
+# Verify
 mise run list
 
 # Update after changes
-mise run update your-provider
+mise run update category/plugin-name
 ```
 
 ## Management Scripts
@@ -96,13 +115,14 @@ mise run update your-provider
 
 ## Contributing
 
-We welcome new memory providers! The best plugins:
+We welcome all types of Hermes plugins! The best ones:
 
-- ✅ **Solve real problems** — address actual memory/storage needs
+- ✅ **Solve real problems** — fill gaps in Hermes Agent's capabilities
 - ✅ **Follow conventions** — use the established plugin structure
 - ✅ **Include great docs** — clear setup, configuration, and troubleshooting
 - ✅ **Handle errors gracefully** — network issues, timeouts, auth failures
 - ✅ **Use typed interfaces** — full type hints on public methods
+- ✅ **Pick the right category** — Memory, Tools, Connectors, or Workflows
 
 ---
 

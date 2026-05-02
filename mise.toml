@@ -1,3 +1,32 @@
 [tools]
 python = "3.14"
 uv = "latest"
+
+[tasks.bootstrap]
+description = "Bootstrap: install tools, sync deps, install engram plugin"
+run = ["mise install", "uv sync", "bin/hm-install engram"]
+
+[tasks.install]
+description = "Install all available plugins from the repo"
+run = "bin/hm-install"
+
+[tasks.install-plugin]
+description = "Install a specific plugin by name"
+run = "bin/hm-install"
+
+[tasks.uninstall]
+description = "Uninstall a memory provider plugin"
+run = "bin/hm-uninstall"
+
+[tasks.update]
+description = "Update installed plugins (from repo)"
+alias = "up"
+run = "bin/hm-update"
+
+[tasks.list]
+description = "List available and installed plugins"
+run = "bin/hm-list"
+
+[tasks.shell]
+description = "Enter uv shell environment"
+run = "uv shell"

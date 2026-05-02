@@ -20,6 +20,7 @@ def main() -> None:
     parser.add_argument("plugin", nargs="?", help="Plugin name (e.g. engram)")
     parser.add_argument("--list", action="store_true", help="List available plugins")
     parser.add_argument("--source", default=str(REPO_ROOT), help="Source directory (default: repo root)")
+    parser.add_argument("--yes", "-y", action="store_true", help="Skip reinstall confirmation")
     args = parser.parse_args()
 
     available = discover_plugins()
@@ -45,7 +46,7 @@ def main() -> None:
 
     if dest.exists():
         print(f"Plugin '{args.plugin}' is already installed.")
-        response = input("Reinstall? [y/N] ")
+        response = input("Reinstall? [y/N] ") if not args.yes else "y"
         if response.lower() != "y":
             print("Aborted.")
             return

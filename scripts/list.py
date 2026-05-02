@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
 
 PLUGINS_DIR = Path.home() / ".hermes" / "plugins" / "memory"
@@ -18,7 +17,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="List Hermes memory provider plugins")
     parser.add_argument("--installed", action="store_true", help="Show only installed")
     parser.add_argument("--available", action="store_true", help="Show only available")
+    parser.add_argument("rest", nargs="*", help=argparse.SUPPRESS)
     args = parser.parse_args()
+
+    # mise passes 'sh' as $0 when no args given; drop it
+    _ = [a for a in args.rest if a != "sh"]
 
     available = discover_plugins()
     installed = {p.name for p in PLUGINS_DIR.iterdir()} if PLUGINS_DIR.is_dir() else set()

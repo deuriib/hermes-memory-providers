@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# hm-install — install a Hermes memory provider plugin
+set -euo pipefail
+cd "$(dirname "$0")/.."
+uv run python -m scripts.install -y "$@"

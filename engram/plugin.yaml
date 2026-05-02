@@ -1,0 +1,15 @@
+name: engram
+version: 1.0.0
+description: "Engram persistent memory for Hermes Agent — cross-session structured observations with FTS5 search, project/scope filtering, and session timeline. Requires engram serve running."
+hooks:
+  - on_session_end
+requires_env:
+  - name: ENGRAM_PORT
+    description: "Port where engram serve runs (default: 7437)"
+    secret: false
+  - name: ENGRAM_BIN
+    description: "Path to engram binary for auto-start (default: engram)"
+    secret: false
+  - name: ENGRAM_DISABLED
+    description: "Set to 'true' to disable the provider"
+    secret: false

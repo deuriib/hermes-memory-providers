@@ -8,11 +8,31 @@ from pathlib import Path
 
 PLUGINS_DIR = Path.home() / ".hermes" / "plugins" / "memory"
 REPO_ROOT = Path(__file__).parent.parent
+PLUGINS_SOURCE_DIR = REPO_ROOT / "plugins"
 
 
 def discover_plugins() -> list[str]:
-    """Return plugin directories found in the repo."""
-    return [p.name for p in REPO_ROOT.iterdir() if p.is_dir() and (p / "plugin.yaml").exists()]
+    """Return plugin directories found in the repo (supports nested structure)."""
+    if not PLUGINS_SOURCE_DIR.exists():
+        return []
+    
+    plugins = []
+    
+    for item in PLUGINS_SOURCE_DIR.iterdir():
+        if not item.is_dir():
+            continue
+            
+        # Direct plugin: plugins/{plugin}/
+        if (item / "plugin.yaml").exists():
+            plugins.append(item.name)
+        else:
+            # Category directory: plugins/{category}/
+            # Look for nested plugins: plugins/{category}/{plugin}/
+            for plugin_dir in item.iterdir():
+                if plugin_dir.is_dir() and (plugin_dir / "plugin.yaml").exists():
+                    plugins.append(f"{item.name}/{plugin_dir.name}")
+    
+    return plugins
 
 
 def main() -> None:
@@ -41,8 +61,15 @@ def main() -> None:
         print(f"Run with --list to see available plugins.", file=sys.stderr)
         sys.exit(1)
 
-    source = Path(args.source) / args.plugin
-    dest = PLUGINS_DIR / args.plugin
+    # Handle nested plugin structure
+    source = Path(args.source) / "plugins" / args.plugin
+    
+    # For nested plugins, use just the plugin name as destination
+    if "/" in args.plugin:
+        plugin_name = args.plugin.split("/")[-1]
+        dest = PLUGINS_DIR / plugin_name
+    else:
+        dest = PLUGINS_DIR / args.plugin
 
     if dest.exists():
         print(f"Plugin '{args.plugin}' is already installed.")

@@ -9,7 +9,9 @@
 
 ## What this repo is
 
-Monorepo of memory provider plugins for [Hermes Agent](https://github.com/NousResearch/hermes-agent). Each plugin implements the `MemoryProvider` ABC and integrates a different memory backend.
+A curated collection of memory provider plugins for [Hermes Agent](https://github.com/NousResearch/hermes-agent). Each plugin implements the `MemoryProvider` abstract base class to integrate different memory backends, enabling persistent memory across Hermes sessions with your preferred storage solution.
+
+**Why this matters:** Hermes Agent's memory system is pluggable by design. Whether you prefer local SQLite, cloud databases, or specialized vector stores, this monorepo provides battle-tested integrations that just work.
 
 ## Current plugins
 
@@ -21,7 +23,8 @@ Monorepo of memory provider plugins for [Hermes Agent](https://github.com/NousRe
 
 ```
 hermes-memory-providers/
-  engram/           ← one directory per plugin
+  plugins/
+    engram/         ← one directory per plugin
     __init__.py     ← implements MemoryProvider
     client.py       ← backend client
     schemas.py      ← tool definitions

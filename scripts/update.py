@@ -9,11 +9,31 @@ from pathlib import Path
 
 PLUGINS_DIR = Path.home() / ".hermes" / "plugins" / "memory"
 REPO_ROOT = Path(__file__).parent.parent
+PLUGINS_SOURCE_DIR = REPO_ROOT / "plugins"
 
 
 def discover_plugins() -> list[str]:
-    return [p.name for p in REPO_ROOT.iterdir() if p.is_dir() and (p / "plugin.yaml").exists()]
-
+    """Return plugin directories found in the repo (supports nested structure)."""
+    if not PLUGINS_SOURCE_DIR.exists():
+        return []
+    
+    plugins = []
+    
+    for item in PLUGINS_SOURCE_DIR.iterdir():
+        if not item.is_dir():
+            continue
+            
+        # Direct plugin: plugins/{plugin}/
+        if (item / "plugin.yaml").exists():
+            plugins.append(item.name)
+        else:
+            # Category directory: plugins/{category}/
+            # Look for nested plugins: plugins/{category}/{plugin}/
+            for plugin_dir in item.iterdir():
+                if plugin_dir.is_dir() and (plugin_dir / "plugin.yaml").exists():
+                    plugins.append(f"{item.name}/{plugin_dir.name}")
+    
+    return plugins
 
 def git_update(repo: Path) -> None:
     """Pull latest changes from origin master."""
@@ -62,8 +82,15 @@ def main() -> None:
         return
 
     for name in targets:
-        src = repo / name
-        dst = PLUGINS_DIR / name
+        # Handle nested plugin structure
+        if "/" in name:
+            src = repo / "plugins" / name
+            # For nested plugins, use just the plugin name as destination
+            plugin_name = name.split("/")[-1]
+            dst = PLUGINS_DIR / plugin_name
+        else:
+            src = repo / "plugins" / name
+            dst = PLUGINS_DIR / name
         if dst.exists():
             shutil.rmtree(dst)
         shutil.copytree(src, dst)

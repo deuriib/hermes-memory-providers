@@ -1,95 +1,111 @@
 # Hermes Memory Providers
 
-**Plug in memory. Never explain yourself twice.**
+> Persistent memory backends for [Hermes Agent](https://github.com/NousResearch/hermes-agent) — because great AI assistants remember everything.
 
-A collection of memory provider plugins for [Hermes Agent](https://github.com/NousResearch/hermes-agent). Swap the backend, keep the workflow.
+## Why Memory Providers?
 
-## The problem
+Hermes Agent is designed to learn and grow with you across sessions. But where should it store what it learns? This monorepo gives you options:
 
-Hermes Agent has a built-in memory, but it's ephemeral. Start a new session, and it's gone. You find yourself re-explaining the architecture, the conventions, the "remember when we fixed that bug three weeks ago" context — over and over.
+- **Local-first** with SQLite and file-based storage
+- **Cloud-native** with database integrations  
+- **Specialized** with vector databases and embedding stores
+- **Custom** — build your own following our plugin architecture
 
-This repo fixes that.
+## Available Providers
 
-## How it works
+| Provider | Backend | Status | Best For |
+|----------|---------|--------|----------|
+| [**Engram**](./plugins/engram/) | Go/SQLite HTTP API | ✅ Stable | Local development, fast queries |
 
-Memory providers implement Hermes's `MemoryProvider` interface. Each one connects to a different storage backend — SQLite, vector DBs, cloud services. The agent doesn't care which one you use. You do.
+## Quick Start
 
-```
-You: "Search my memory for the auth bug we fixed in March"
-       ↓
-Hermes Agent (with Engram provider)
-       ↓
-mem_search → engram serve → SQLite
-       ↓
-Returns the session, the root cause, the fix.
-Done in seconds. No re-explaining.
-```
+### 1. Choose Your Provider
 
-## Plugins
+Browse the `plugins/` directory and pick the memory backend that fits your workflow.
 
-### [Engram](engram/) — Stable
-
-Persistent cross-session memory via Engram's HTTP API (Go + SQLite).
-
-- 15 memory tools exposed to the model
-- Passive turn capture (non-blocking)
-- Background context prefetch
-- FTS5 search across all sessions
-- Session lifecycle (resume, branch, reset)
-
-[Install Engram →](engram/)
-
-## Why a monorepo?
-
-Memory providers share the same interface. When someone builds a new backend, it should be here — not as a fork, not as a hidden gist. One place to discover, compare, and contribute.
-
-Current providers:
-
-| Plugin | Backend | Notes |
-|--------|---------|-------|
-| [Engram](engram/) | SQLite + HTTP (Go) | Self-hosted, fast, full-text search |
-| _yours?_ | — | [Open an issue](https://github.com/deuriib/hermes-memory-providers/issues/new) to add one |
-
-## Adding a plugin
-
-See [AGENTS.md](AGENTS.md) for the full plugin development guide. Short version:
+### 2. Install
 
 ```bash
-# 1. Create plugin directory
-mkdir my-memory-plugin && cd my-memory-plugin
+# Install a specific provider
+./bin/hm-install engram
 
-# 2. Implement MemoryProvider ABC
-# See AGENTS.md for the interface contract
-
-# 3. Add plugin metadata
-cat > plugin.yaml << 'EOF'
-name: my-memory-plugin
-version: 1.0.0
-type: memory_provider
-EOF
-
-# 4. Open a PR
+# Or use mise tasks
+mise run install engram
 ```
 
-## Quick install (Engram)
+### 3. Configure Hermes
+
+Your chosen provider will be automatically registered with Hermes Agent on next startup.
+
+## For Plugin Developers
+
+### Architecture Requirements
+
+Every memory provider must implement the `MemoryProvider` ABC with these methods:
+
+```python
+class MemoryProvider(ABC):
+    @abstractmethod
+    async def save(self, observation: dict) -> str: ...
+    
+    @abstractmethod
+    async def search(self, query: str, **filters) -> list[dict]: ...
+    
+    @abstractmethod
+    async def get(self, id: str) -> dict: ...
+```
+
+### Plugin Structure
+
+```
+plugins/your-provider/
+├── __init__.py       # Provider class + register() function
+├── client.py         # Backend client implementation  
+├── schemas.py        # Tool definitions for Hermes
+├── plugin.yaml       # Metadata (name, version, type)
+└── README.md         # Usage docs
+```
+
+### Development Workflow
 
 ```bash
-git clone https://github.com/deuriib/hermes-memory-providers.git
-cd hermes-memory-providers
-mise run bootstrap    # installs tools + deps + engram plugin
+# Local testing
+mise run install your-provider
+
+# Verify installation
+mise run list
+
+# Update after changes
+mise run update your-provider
 ```
 
-Individual commands:
+## Management Scripts
 
-```bash
-mise run list          # show available and installed plugins
-mise run install engram # install a plugin
-mise run uninstall engram [--purge]  # remove a plugin
-mise run update [plugin] # update from repo (git pull + reinstall)
-```
+| Command | Purpose |
+|---------|---------|
+| `bin/hm-install <provider>` | Install provider to Hermes |
+| `bin/hm-uninstall <provider>` | Remove provider |
+| `bin/hm-update [provider]` | Update one or all providers |
+| `bin/hm-list` | Show installed providers |
 
-Requires `engram serve` running at `http://127.0.0.1:7437`.
+## Requirements
 
-## License
+- **Python 3.11+** — for type hints and modern async
+- **Hermes Agent** — this is a plugin collection, not standalone
+- **Provider-specific deps** — see individual plugin READMEs
 
-MIT — see [LICENSE](LICENSE).
+## Contributing
+
+We welcome new memory providers! The best plugins:
+
+- ✅ **Solve real problems** — address actual memory/storage needs
+- ✅ **Follow conventions** — use the established plugin structure
+- ✅ **Include great docs** — clear setup, configuration, and troubleshooting
+- ✅ **Handle errors gracefully** — network issues, timeouts, auth failures
+- ✅ **Use typed interfaces** — full type hints on public methods
+
+---
+
+**Made with ❤️ for the Hermes Agent community**
+
+Need help? Check individual plugin READMEs or open an issue.

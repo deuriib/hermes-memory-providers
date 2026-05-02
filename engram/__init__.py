@@ -583,8 +583,6 @@ class EngramMemoryProvider(MemoryProvider):
             schemas.MEM_SESSION_START,
             schemas.MEM_SESSION_END,
             schemas.MEM_TIMELINE,
-            schemas.MEM_JUDGE,
-            schemas.MEM_DOCTOR,
             schemas.MEM_CURRENT_PROJECT,
             schemas.MEM_CAPTURE_PASSIVE,
         ]
@@ -854,38 +852,6 @@ def _mem_timeline(provider: EngramMemoryProvider, args: dict, **kwargs) -> str:
     return _tool_json(result)
 
 
-# ── mem_judge ────────────────────────────────────────────────────────────────
-
-def _mem_judge(provider: EngramMemoryProvider, args: dict, **kwargs) -> str:
-    """Record verdict on memory conflict. POST /judge"""
-    client = _ensure_client(provider)
-    if not client:
-        return _tool_error("Engram not connected.")
-
-    result = client.post_judge(
-        judgment_id=args.get("judgment_id", ""),
-        relation=args.get("relation", ""),
-        reason=args.get("reason", ""),
-        confidence=float(args.get("confidence", 1.0)),
-    )
-    return _tool_json(result)
-
-
-# ── mem_doctor ───────────────────────────────────────────────────────────────
-
-def _mem_doctor(provider: EngramMemoryProvider, args: dict, **kwargs) -> str:
-    """Run operational diagnostics. GET /doctor"""
-    client = _ensure_client(provider)
-    if not client:
-        return _tool_error("Engram not connected.")
-
-    result = client.get_doctor(
-        project=args.get("project") or provider._project,
-        check=args.get("check", ""),
-    )
-    return _tool_json(result)
-
-
 # ── mem_current_project ─────────────────────────────────────────────────────
 
 def _mem_current_project(provider: EngramMemoryProvider, args: dict, **kwargs) -> str:
@@ -931,8 +897,6 @@ _TOOL_HANDLERS: Dict[str, callable] = {
     "mem_session_start": _mem_session_start,
     "mem_session_end": _mem_session_end,
     "mem_timeline": _mem_timeline,
-    "mem_judge": _mem_judge,
-    "mem_doctor": _mem_doctor,
     "mem_current_project": _mem_current_project,
     "mem_capture_passive": _mem_capture_passive,
 }

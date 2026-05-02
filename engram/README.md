@@ -12,7 +12,7 @@ Hermes Agent has a built-in ephemeral memory. This plugin replaces it with Engra
 
 ## Features
 
-- **15 memory tools** exposed to the model: `mem_search`, `mem_save`, `mem_update`, `mem_delete`, `mem_context`, `mem_timeline`, `mem_session_summary`, `mem_get_observation`, `mem_save_prompt`, `mem_session_start`, `mem_session_end`, `mem_judge`, `mem_doctor`, `mem_current_project`, `mem_capture_passive`
+- **13 memory tools** exposed to the model: `mem_search`, `mem_save`, `mem_update`, `mem_delete`, `mem_context`, `mem_timeline`, `mem_session_summary`, `mem_get_observation`, `mem_save_prompt`, `mem_session_start`, `mem_session_end`, `mem_current_project`, `mem_capture_passive`
 - **Passive capture**: turns are automatically synced as observations after each exchange (non-blocking daemon thread)
 - **Prefetch**: relevant context is fetched in the background before each turn
 - **Project detection**: auto-detects project name from `git remote origin`
@@ -135,8 +135,6 @@ Hermes turn → EngramMemoryProvider → HTTP → engram serve → SQLite
 | `mem_save_prompt` | Capture user prompt | `POST /observations` |
 | `mem_session_start` | Register session start | `POST /sessions` |
 | `mem_session_end` | Mark session completed | `POST /sessions/{id}/end` |
-| `mem_judge` | Record memory conflict verdict | `POST /judge` |
-| `mem_doctor` | Operational diagnostics | `GET /doctor` |
 | `mem_current_project` | Detect current project | local |
 | `mem_capture_passive` | Passive content capture | `POST /observations/passive` |
 

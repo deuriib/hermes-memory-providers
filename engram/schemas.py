@@ -258,46 +258,6 @@ MEM_STATS = {
     },
 }
 
-MEM_JUDGE = {
-    "name": "mem_judge",
-    "description": "Record a verdict on a pending memory conflict surfaced by mem_save.",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "judgment_id": {
-                "type": "string",
-                "description": "The judgment_id from candidates[] in the mem_save response.",
-            },
-            "relation": {
-                "type": "string",
-                "enum": ["related", "compatible", "scoped", "conflicts_with", "supersedes", "not_conflict"],
-                "description": "The verdict.",
-            },
-            "reason": {
-                "type": "string",
-                "description": "Brief explanation of the verdict (max 200 chars).",
-            },
-            "confidence": {
-                "type": "number",
-                "description": "Confidence score 0.0..1.0 (default: 1.0).",
-            },
-        },
-        "required": ["judgment_id", "relation"],
-    },
-}
-
-MEM_DOCTOR = {
-    "name": "mem_doctor",
-    "description": "Run read-only operational diagnostics. Returns project state, recent sessions, and any detected issues.",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "project": {"type": "string", "description": "Project to diagnose."},
-            "check": {"type": "string", "description": "Optional specific diagnostic check code."},
-        },
-    },
-}
-
 MEM_CURRENT_PROJECT = {
     "name": "mem_current_project",
     "description": (

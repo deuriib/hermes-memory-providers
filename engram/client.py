@@ -332,34 +332,6 @@ class EngramHTTPClient:
             params["project"] = project
         return self._fetch("/stats", params=params)
 
-    # ─── Doctor ─────────────────────────────────────────────────────────────
-
-    def get_doctor(self, project: str = "", check: str = "") -> Optional[Dict[str, Any]]:
-        """GET /doctor — operational diagnostics."""
-        params: Dict[str, Any] = {}
-        if project:
-            params["project"] = project
-        if check:
-            params["check"] = check
-        return self._fetch("/doctor", params=params)
-
-    # ─── Judge ──────────────────────────────────────────────────────────────
-
-    def post_judge(
-        self,
-        judgment_id: str,
-        relation: str,
-        reason: str = "",
-        confidence: float = 1.0,
-    ) -> Optional[Dict[str, Any]]:
-        """POST /judge — record verdict on memory conflict."""
-        return self._fetch("/judge", method="POST", body={
-            "judgment_id": judgment_id,
-            "relation": relation,
-            "reason": reason,
-            "confidence": confidence,
-        })
-
     # ─── Prompts ────────────────────────────────────────────────────────────
 
     def add_prompt(

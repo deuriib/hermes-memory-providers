@@ -606,3 +606,22 @@ def mem_capture_passive(args: dict, **kwargs) -> str:
 # ─── Tool Registry ────────────────────────────────────────────────────────────
 # Maps schema name → handler function.
 # Each receives (args: dict, **kwargs) → JSON string
+
+TOOL_REGISTRY = {
+    "mem_search": mem_search,
+    "mem_save": mem_save,
+    "mem_update": mem_update,
+    "mem_delete": mem_delete,
+    "mem_context": mem_context,
+    "mem_session_summary": mem_session_summary,
+    "mem_get_observation": mem_get_observation,
+    "mem_save_prompt": mem_save_prompt,
+    "mem_session_start": mem_session_start,
+    "mem_session_end": mem_session_end,
+    "mem_timeline": mem_timeline,
+    "mem_stats": mem_stats,
+    "mem_judge": mem_judge,
+    "mem_doctor": mem_doctor,
+    "mem_current_project": mem_current_project,
+    "mem_capture_passive": mem_capture_passive,
+}

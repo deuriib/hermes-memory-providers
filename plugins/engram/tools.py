@@ -223,8 +223,18 @@ def ensure_session(session_id: str) -> None:
             "directory": _current_directory,
         },
     )
-    if response is not None and response.get("status", 200) < 400:
-        _known_sessions.add(session_id)
+    if response is None:
+        return
+
+    status = response.get("status")
+    if isinstance(status, int) and status >= 400:
+        logger.warning(
+            "failed to register engram session %s: %s",
+            session_id,
+            response.get("error") or status,
+        )
+        return
+    _known_sessions.add(session_id)
 
 
 def capture_prompt(session_id: str, content: str) -> None:
@@ -536,8 +546,7 @@ def mem_judge(args: dict, **kwargs) -> str:
             "error": "mem_judge is not available via the Engram HTTP API.",
             "details": (
                 "The Hermes plugin uses direct HTTP requests, but the /judge route "
-                "is not exposed. Route this tool through the MCP server instead: "
-                "ensure mcp_servers.engram is configured in ~/.hermes/config.yaml."
+                "is not exposed. This tool is not available through the plugin interface."
             ),
         }
     )
@@ -554,8 +563,7 @@ def mem_doctor(args: dict, **kwargs) -> str:
             "error": "mem_doctor is not available via the Engram HTTP API.",
             "details": (
                 "The Hermes plugin uses direct HTTP requests, but the /doctor route "
-                "is not exposed. Route this tool through the MCP server instead: "
-                "ensure mcp_servers.engram is configured in ~/.hermes/config.yaml."
+                "is not exposed. This tool is not available through the plugin interface."
             ),
         }
     )

@@ -271,7 +271,7 @@ def clear_session(session_id: Optional[str]) -> None:
 # Each receives (args: dict, **kwargs) → JSON string
 
 
-def mem_search(args: dict, **kwargs) -> str:
+def mem_search(args: dict) -> str:
     """Search persistent memory. Endpoint: GET /search?q=...&project=...&type=...&scope=...&limit=..."""
     try:
         params = {
@@ -296,7 +296,7 @@ def mem_search(args: dict, **kwargs) -> str:
         return json.dumps({"error": str(e)})
 
 
-def mem_save(args: dict, **kwargs) -> str:
+def mem_save(args: dict) -> str:
     try:
         result = _engram_fetch(
             "/observations",
@@ -317,7 +317,7 @@ def mem_save(args: dict, **kwargs) -> str:
         return json.dumps({"error": str(e)})
 
 
-def mem_update(args: dict, **kwargs) -> str:
+def mem_update(args: dict) -> str:
     """Update an existing observation. Endpoint: PATCH /observations/{id}"""
     try:
         obs_id = args.get("id")
@@ -340,7 +340,7 @@ def mem_update(args: dict, **kwargs) -> str:
         return json.dumps({"error": str(e)})
 
 
-def mem_delete(args: dict, **kwargs) -> str:
+def mem_delete(args: dict) -> str:
     try:
         obs_id = args.get("id")
         if not obs_id:
@@ -353,7 +353,7 @@ def mem_delete(args: dict, **kwargs) -> str:
         return json.dumps({"error": str(e)})
 
 
-def mem_context(args: dict, **kwargs) -> str:
+def mem_context(args: dict) -> str:
     """Get recent memory context. Endpoint: GET /context?project=...&scope=..."""
     try:
         params = {}
@@ -369,7 +369,7 @@ def mem_context(args: dict, **kwargs) -> str:
         return json.dumps({"error": str(e)})
 
 
-def mem_session_summary(args: dict, **kwargs) -> str:
+def mem_session_summary(args: dict) -> str:
     """Save end-of-session summary. Uses POST /observations with type=session_summary."""
     try:
         # No /sessions/summary endpoint in HTTP API — use mem_save pattern instead.
@@ -397,7 +397,7 @@ def mem_session_summary(args: dict, **kwargs) -> str:
         return json.dumps({"error": str(e)})
 
 
-def mem_get_observation(args: dict, **kwargs) -> str:
+def mem_get_observation(args: dict) -> str:
     try:
         obs_id = args.get("id")
         if not obs_id:
@@ -410,7 +410,7 @@ def mem_get_observation(args: dict, **kwargs) -> str:
         return json.dumps({"error": str(e)})
 
 
-def mem_save_prompt(args: dict, **kwargs) -> str:
+def mem_save_prompt(args: dict) -> str:
     """Save a user prompt for context. Endpoint: POST /observations (type=prompt)."""
     try:
         project = _current_project or "unknown"
@@ -433,7 +433,7 @@ def mem_save_prompt(args: dict, **kwargs) -> str:
         return json.dumps({"error": str(e)})
 
 
-def mem_session_start(args: dict, **kwargs) -> str:
+def mem_session_start(args: dict) -> str:
     """Register session start. Endpoint: POST /sessions (creates session record).
 
     Note: HTTP API doesn't have a dedicated /sessions endpoint — this uses the
@@ -471,7 +471,7 @@ def mem_session_start(args: dict, **kwargs) -> str:
         return json.dumps({"error": str(e)})
 
 
-def mem_session_end(args: dict, **kwargs) -> str:
+def mem_session_end(args: dict) -> str:
     """Mark session as completed. Best-effort via passive capture."""
     try:
         project = _current_project or "unknown"
@@ -496,7 +496,7 @@ def mem_session_end(args: dict, **kwargs) -> str:
         return json.dumps({"error": str(e)})
 
 
-def mem_timeline(args: dict, **kwargs) -> str:
+def mem_timeline(args: dict) -> str:
     """Get timeline of observations for a project. Endpoint: GET /timeline?project=...&scope=...&limit=..."""
     try:
         params = {"project": args.get("project", _current_project or "")}
@@ -512,7 +512,7 @@ def mem_timeline(args: dict, **kwargs) -> str:
         return json.dumps({"error": str(e)})
 
 
-def mem_stats(args: dict, **kwargs) -> str:
+def mem_stats(args: dict) -> str:
     """Get memory statistics.
 
     The HTTP server does not expose a /stats endpoint. Use the MCP server
@@ -525,7 +525,7 @@ def mem_stats(args: dict, **kwargs) -> str:
     )
 
 
-def mem_judge(args: dict, **kwargs) -> str:
+def mem_judge(args: dict) -> str:
     """Record a verdict on a pending memory conflict.
 
     The HTTP server does not expose a /judge endpoint. Use the MCP server
@@ -543,7 +543,7 @@ def mem_judge(args: dict, **kwargs) -> str:
     )
 
 
-def mem_doctor(args: dict, **kwargs) -> str:
+def mem_doctor(args: dict) -> str:
     """Run operational diagnostics.
 
     The HTTP server does not expose a /doctor endpoint. Use the MCP server
@@ -561,7 +561,7 @@ def mem_doctor(args: dict, **kwargs) -> str:
     )
 
 
-def mem_current_project(args: dict, **kwargs) -> str:
+def mem_current_project(args: dict) -> str:
     """Detect current project from working directory. Uses _current_project set by hook."""
     project = _current_project or "unknown"
     return json.dumps(
@@ -573,7 +573,7 @@ def mem_current_project(args: dict, **kwargs) -> str:
     )
 
 
-def mem_capture_passive(args: dict, **kwargs) -> str:
+def mem_capture_passive(args: dict) -> str:
     """Extract and save structured learnings from text output. Endpoint: POST /passive."""
     try:
         project = _current_project or "unknown"

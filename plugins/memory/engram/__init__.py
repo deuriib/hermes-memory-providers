@@ -1,313 +1,282 @@
 """
-Engram — Hermes Agent Plugin
+Engram Memory Provider Plugin for Hermes Agent
 
-Thin layer that connects Hermes Agent's event hooks to the Engram Go binary.
-The Go binary runs as a local HTTP server and handles all persistence.
+Implements the MemoryProvider ABC to provide persistent memory across sessions.
+Connects to the Engram Go binary running as a local HTTP server.
 
 Flow:
-    Hermes events → this plugin → HTTP calls → engram serve → SQLite
-
-Hooks:
-    pre_llm_call     → inject memory instructions into system prompt
-    post_tool_call   → passive capture after tool execution
+    Hermes MemoryProvider → HTTP calls → engram serve → SQLite
 """
 
+import json
 import logging
 import os
+import threading
+from pathlib import Path
+from typing import Dict, List, Optional
 
+from agent.memory_provider import MemoryProvider
 from . import schemas, tools
 
 logger = logging.getLogger(__name__)
 
-# Memory instructions injected into the system prompt so the agent
-# always knows about the Engram protocol, even after compaction.
-MEMORY_INSTRUCTIONS = """
 
+class EngramMemoryProvider(MemoryProvider):
+    """
+    Engram persistent memory provider implementation.
+    
+    Connects to 'engram serve' running locally and provides tools for
+    memory search, save, update, and session management.
+    """
+
+    def __init__(self):
+        self._session_id: Optional[str] = None
+        self._hermes_home: Optional[Path] = None
+        self._config: Dict = {}
+        self._sync_thread: Optional[threading.Thread] = None
+
+    @property
+    def name(self) -> str:
+        return "engram"
+
+    def is_available(self) -> bool:
+        """Check if Engram is available. No network calls."""
+        # Check if engram binary exists in PATH
+        import shutil
+        return shutil.which(os.environ.get("ENGRAM_BIN", "engram")) is not None
+
+    def initialize(self, session_id: str, **kwargs) -> None:
+        """Called once at agent startup."""
+        self._session_id = session_id
+        self._hermes_home = Path(kwargs.get("hermes_home", "~/.hermes")).expanduser()
+        
+        # Load config if it exists
+        config_path = self._hermes_home / "engram.json"
+        if config_path.exists():
+            try:
+                self._config = json.loads(config_path.read_text())
+            except Exception as e:
+                logger.warning("Failed to load engram config: %s", e)
+        
+        # Set up session context
+        cwd = os.getcwd()
+        tools.set_session_context(cwd)
+        
+        # Ensure engram server is running
+        tools._ensure_server()
+        
+        # Register session
+        tools.ensure_session(session_id)
+        
+        logger.info("Engram memory provider initialized for session: %s", session_id)
+
+    def get_config_schema(self) -> List[Dict]:
+        """Return config schema for 'hermes memory setup'."""
+        return [
+            {
+                "key": "port",
+                "description": "Engram server port",
+                "default": "7437",
+                "env_var": "ENGRAM_PORT",
+            },
+            {
+                "key": "binary_path",
+                "description": "Path to engram binary",
+                "default": "engram", 
+                "env_var": "ENGRAM_BIN",
+            },
+        ]
+
+    def save_config(self, values: Dict, hermes_home: str) -> None:
+        """Write non-secret config to engram.json."""
+        config_path = Path(hermes_home) / "engram.json"
+        config_path.write_text(json.dumps(values, indent=2))
+
+    def get_tool_schemas(self) -> Dict[str, Dict]:
+        """Return tool schemas for injection."""
+        return {
+            "mem_search": schemas.MEM_SEARCH,
+            "mem_save": schemas.MEM_SAVE,
+            "mem_update": schemas.MEM_UPDATE,
+            "mem_delete": schemas.MEM_DELETE,
+            "mem_context": schemas.MEM_CONTEXT,
+            "mem_session_summary": schemas.MEM_SESSION_SUMMARY,
+            "mem_get_observation": schemas.MEM_GET_OBSERVATION,
+            "mem_save_prompt": schemas.MEM_SAVE_PROMPT,
+            "mem_session_start": schemas.MEM_SESSION_START,
+            "mem_session_end": schemas.MEM_SESSION_END,
+            "mem_timeline": schemas.MEM_TIMELINE,
+            "mem_judge": schemas.MEM_JUDGE,
+            "mem_doctor": schemas.MEM_DOCTOR,
+            "mem_current_project": schemas.MEM_CURRENT_PROJECT,
+            "mem_capture_passive": schemas.MEM_CAPTURE_PASSIVE,
+            "mem_stats": schemas.MEM_STATS,
+        }
+
+    def handle_tool_call(self, tool_name: str, args: Dict) -> str:
+        """Handle tool calls by routing to appropriate handler."""
+        handlers = {
+            "mem_search": tools.mem_search,
+            "mem_save": tools.mem_save,
+            "mem_update": tools.mem_update,
+            "mem_delete": tools.mem_delete,
+            "mem_context": tools.mem_context,
+            "mem_session_summary": tools.mem_session_summary,
+            "mem_get_observation": tools.mem_get_observation,
+            "mem_save_prompt": tools.mem_save_prompt,
+            "mem_session_start": tools.mem_session_start,
+            "mem_session_end": tools.mem_session_end,
+            "mem_timeline": tools.mem_timeline,
+            "mem_judge": tools.mem_judge,
+            "mem_doctor": tools.mem_doctor,
+            "mem_current_project": tools.mem_current_project,
+            "mem_capture_passive": tools.mem_capture_passive,
+            "mem_stats": tools.mem_stats,
+        }
+        
+        handler = handlers.get(tool_name)
+        if not handler:
+            return json.dumps({"error": f"Unknown tool: {tool_name}"})
+        
+        try:
+            return handler(args)
+        except Exception as e:
+            logger.exception("Error handling tool %s", tool_name)
+            return json.dumps({"error": str(e)})
+
+    def system_prompt_block(self) -> str:
+        """Return memory protocol instructions for system prompt."""
+        return """
 ## Engram Persistent Memory — Protocol
 
 You have access to Engram, a persistent memory system that survives across sessions and compactions.
-This is NOT optional — use it proactively.
+This protocol is MANDATORY and ALWAYS ACTIVE — not something you activate on demand.
 
-### WHEN TO SAVE (mandatory — call IMMEDIATELY after these events)
+### PROACTIVE SAVE TRIGGERS (mandatory — do NOT wait for user to ask)
 
-Call `mem_save` after:
-- Bug fix completed
+Call `mem_save` IMMEDIATELY and WITHOUT BEING ASKED after any of these:
 - Architecture or design decision made
+- Team convention documented or established
+- Workflow change agreed upon
+- Tool or library choice made with tradeoffs
+- Bug fix completed (include root cause)
+- Feature implemented with non-obvious approach
+- Configuration change or environment setup done
 - Non-obvious discovery about the codebase
-- Configuration change or environment setup
+- Gotcha, edge case, or unexpected behavior found
 - Pattern established (naming, structure, convention)
 - User preference or constraint learned
 
 Format for `mem_save`:
-- **title**: Verb + what — short, searchable (e.g. "Fixed N+1 query", "Chose Zustand over Redux")
+- **title**: Verb + what — short, searchable (e.g. "Fixed N+1 query in UserList")
 - **type**: bugfix | decision | architecture | discovery | pattern | config | preference
 - **scope**: `project` (default) | `personal`
-- **topic_key**: stable key like `architecture/auth-model` for evolving decisions
+- **topic_key** (recommended for evolving topics): stable key like `architecture/auth-model`
 - **content**:
-  **What**: One sentence — what was done
-  **Why**: What motivated it
-  **Where**: Files or paths affected
-  **Learned**: Gotchas, edge cases (omit if none)
-
-Topic rules:
-- Different topics must not overwrite each other
-- Reuse same `topic_key` to update an evolving topic
-- If unsure about the key, pick a descriptive kebab-case name (e.g. `arch-auth-model`)
+  - **What**: One sentence — what was done
+  - **Why**: What motivated it (user request, bug, performance, etc.)
+  - **Where**: Files or paths affected
+  - **Learned**: Gotchas, edge cases, things that surprised you (omit if none)
 
 ### WHEN TO SEARCH MEMORY
 
-When user asks to recall something — any variation of "remember", "recall",
-"what did we do", "how did we solve", "recordar", "qué hicimos":
-1. Call `mem_context` — recent session history (fast, cheap)
-2. If not found, call `mem_search` with keywords
-3. If found, call `mem_get_observation` for full content
+On any variation of "remember", "recall", "what did we do", "how did we solve", "recordar", "qué hicimos", or references to past work:
+1. Call `mem_context` — checks recent session history (fast, cheap)
+2. If not found, call `mem_search` with relevant keywords
+3. If found, use `mem_get_observation` for full untruncated content
 
 Also search PROACTIVELY when:
-- Starting work that might have been done before
+- Starting work on something that might have been done before
 - User mentions a topic you have no context on
-- User's first message references a project, feature, or problem
+- User's FIRST message references the project, a feature, or a problem — call `mem_search` with keywords from their message to check for prior work before responding
 
 ### SESSION CLOSE PROTOCOL (mandatory)
 
-Before ending a session or saying "done" / "listo" / "that's it":
-Call `mem_session_summary` with this structure:
+Before ending a session or saying "done" / "listo" / "that's it", call `mem_session_summary` with this structure:
 
 ## Goal
-[What we were working on]
+[What we were working on this session]
 
 ## Instructions
-[User preferences or constraints — skip if none]
+[User preferences or constraints discovered — skip if none]
 
 ## Discoveries
-- [Technical findings, gotchas]
+- [Technical findings, gotchas, non-obvious learnings]
 
 ## Accomplished
 - [Completed items with key details]
 
 ## Next Steps
-- [What remains — for the next session]
+- [What remains to be done — for the next session]
 
 ## Relevant Files
-- path/to/file — [what it does]
+- path/to/file — [what it does or what changed]
 
-### AFTER COMPACTION
-
-If you see "FIRST ACTION REQUIRED" or context reset message:
-1. Call `mem_session_summary` with the compacted content FIRST
-2. Then call `mem_context` to recover context
-3. Only THEN continue working
-
-Do not skip step 1 — without it, everything before compaction is lost.
+This is NOT optional. If you skip this, the next session starts blind.
 """
 
+    def prefetch(self, query: str) -> str:
+        """Called before each API call - return recalled context."""
+        try:
+            # Quick context fetch
+            context_data = tools._engram_fetch(
+                "/context", params={"project": tools._current_project}
+            )
+            if context_data and context_data.get("context"):
+                return context_data["context"]
+        except Exception as e:
+            logger.debug("Prefetch failed: %s", e)
+        return ""
 
-# ─── Hook Callbacks ───────────────────────────────────────────────────────────
+    def queue_prefetch(self, query: str) -> None:
+        """Queue pre-warming for next turn (non-blocking)."""
+        def _prefetch():
+            try:
+                # Pre-warm with search based on query
+                tools._engram_fetch(
+                    "/search", 
+                    params={"q": query[:100], "project": tools._current_project, "limit": "5"}
+                )
+            except Exception as e:
+                logger.debug("Queue prefetch failed: %s", e)
+        
+        thread = threading.Thread(target=_prefetch, daemon=True)
+        thread.start()
 
+    def sync_turn(self, user_content: str, assistant_content: str) -> None:
+        """MUST be non-blocking. Persist conversation turn."""
+        def _sync():
+            try:
+                if self._session_id:
+                    # Save user prompt
+                    tools.capture_prompt(self._session_id, user_content)
+            except Exception as e:
+                logger.warning("Turn sync failed: %s", e)
+        
+        # Wait for previous sync to complete
+        if self._sync_thread and self._sync_thread.is_alive():
+            self._sync_thread.join(timeout=5.0)
+        
+        self._sync_thread = threading.Thread(target=_sync, daemon=True)
+        self._sync_thread.start()
 
-def _on_pre_llm_call(
-    session_id: str,
-    user_message: str,
-    conversation_history: list,
-    is_first_turn: bool,
-    model: str,
-    platform: str,
-    **kwargs,
-) -> dict | None:
-    """
-    Inject memory instructions into the system prompt context.
-    This is the ONLY hook that can return a value (context injection).
-    """
-    # Try to start engram server on first turn
-    if is_first_turn:
-        tools._ensure_server()
+    def on_session_end(self, messages: List[Dict]) -> None:
+        """Called when conversation ends."""
+        try:
+            if self._session_id:
+                tools.clear_session(self._session_id)
+        except Exception as e:
+            logger.warning("Session end cleanup failed: %s", e)
 
-    # Inject context from previous sessions on first turn
-    injected = {}
-    if is_first_turn and session_id:
-        context_data = tools._engram_fetch(
-            "/context", params={"project": tools._current_project}
-        )
-        if context_data and context_data.get("context"):
-            injected["context"] = context_data["context"]
-
-    # Always inject memory instructions so the agent knows the protocol
-    injected["system_instruction"] = MEMORY_INSTRUCTIONS
-
-    return injected
-
-
-def _on_session_start(session_id: str, model: str, platform: str, **kwargs) -> None:
-    """Register the session in engram when Hermes starts a new session."""
-    if not session_id:
-        return
-
-    # Get working directory and extract project from git remote
-    cwd = os.getcwd()
-    tools.set_session_context(cwd)
-
-    # Detect sub-agents: Hermes may pass parent info in kwargs
-    parent_id = kwargs.get("parent_session_id") or kwargs.get("parent_id")
-    if parent_id:
-        tools.mark_subagent(session_id)
-        logger.debug(
-            "Sub-agent session detected: %s (parent: %s)", session_id, parent_id
-        )
-        return
-
-    tools.ensure_session(session_id)
-    logger.debug(
-        "Session registered in engram: %s (project: %s)",
-        session_id,
-        tools._current_project,
-    )
-
-
-def _on_session_end(
-    session_id: str,
-    completed: bool,
-    interrupted: bool,
-    model: str,
-    platform: str,
-    **kwargs,
-) -> None:
-    """Clean up session state when Hermes ends a session."""
-    tools.clear_session(session_id)
-    logger.debug(
-        "Session ended in engram: %s (completed=%s, interrupted=%s)",
-        session_id,
-        completed,
-        interrupted,
-    )
-
-
-def _on_post_tool_call(
-    tool_name: str,
-    args: dict,
-    result: str,
-    task_id: str,
-    duration_ms: int,
-    **kwargs,
-) -> None:
-    """Track tool calls for session stats. Skip Engram's own tools."""
-    if task_id:
-        tools.capture_tool_call(task_id, tool_name)
-
-
-# ─── Plugin Registration ──────────────────────────────────────────────────────
+    def shutdown(self) -> None:
+        """Clean up connections."""
+        try:
+            if self._sync_thread and self._sync_thread.is_alive():
+                self._sync_thread.join(timeout=10.0)
+        except Exception as e:
+            logger.warning("Shutdown cleanup failed: %s", e)
 
 
 def register(ctx) -> None:
-    """
-    Wire schemas to handlers and register lifecycle hooks.
-    Called exactly once at Hermes startup.
-    """
-    # ── Tools ──────────────────────────────────────────────────────────────
-    ctx.register_tool(
-        name="mem_search",
-        toolset="engram",
-        schema=schemas.MEM_SEARCH,
-        handler=tools.mem_search,
-    )
-    ctx.register_tool(
-        name="mem_save",
-        toolset="engram",
-        schema=schemas.MEM_SAVE,
-        handler=tools.mem_save,
-    )
-    ctx.register_tool(
-        name="mem_update",
-        toolset="engram",
-        schema=schemas.MEM_UPDATE,
-        handler=tools.mem_update,
-    )
-    ctx.register_tool(
-        name="mem_delete",
-        toolset="engram",
-        schema=schemas.MEM_DELETE,
-        handler=tools.mem_delete,
-    )
-    ctx.register_tool(
-        name="mem_context",
-        toolset="engram",
-        schema=schemas.MEM_CONTEXT,
-        handler=tools.mem_context,
-    )
-    ctx.register_tool(
-        name="mem_session_summary",
-        toolset="engram",
-        schema=schemas.MEM_SESSION_SUMMARY,
-        handler=tools.mem_session_summary,
-    )
-    ctx.register_tool(
-        name="mem_get_observation",
-        toolset="engram",
-        schema=schemas.MEM_GET_OBSERVATION,
-        handler=tools.mem_get_observation,
-    )
-    ctx.register_tool(
-        name="mem_save_prompt",
-        toolset="engram",
-        schema=schemas.MEM_SAVE_PROMPT,
-        handler=tools.mem_save_prompt,
-    )
-    ctx.register_tool(
-        name="mem_session_start",
-        toolset="engram",
-        schema=schemas.MEM_SESSION_START,
-        handler=tools.mem_session_start,
-    )
-    ctx.register_tool(
-        name="mem_session_end",
-        toolset="engram",
-        schema=schemas.MEM_SESSION_END,
-        handler=tools.mem_session_end,
-    )
-    ctx.register_tool(
-        name="mem_timeline",
-        toolset="engram",
-        schema=schemas.MEM_TIMELINE,
-        handler=tools.mem_timeline,
-    )
-    ctx.register_tool(
-        name="mem_judge",
-        toolset="engram",
-        schema=schemas.MEM_JUDGE,
-        handler=tools.mem_judge,
-    )
-    ctx.register_tool(
-        name="mem_doctor",
-        toolset="engram",
-        schema=schemas.MEM_DOCTOR,
-        handler=tools.mem_doctor,
-    )
-    ctx.register_tool(
-        name="mem_current_project",
-        toolset="engram",
-        schema=schemas.MEM_CURRENT_PROJECT,
-        handler=tools.mem_current_project,
-    )
-    ctx.register_tool(
-        name="mem_capture_passive",
-        toolset="engram",
-        schema=schemas.MEM_CAPTURE_PASSIVE,
-        handler=tools.mem_capture_passive,
-    )
-
-    ctx.register_tool(
-        name="mem_stats",
-        toolset="engram",
-        schema=schemas.MEM_STATS,
-        handler=tools.mem_stats,
-    )
-
-    # ── Lifecycle Hooks ────────────────────────────────────────────────────
-    ctx.register_hook("pre_llm_call", _on_pre_llm_call)
-    ctx.register_hook("on_session_start", _on_session_start)
-    ctx.register_hook("on_session_end", _on_session_end)
-    ctx.register_hook("post_tool_call", _on_post_tool_call)
-
-    # ── Server bootstrap ───────────────────────────────────────────────────
-    # Try to start engram serve if not running
-    tools._ensure_server()
-
-    logger.info("Engram plugin loaded — memory protocol active")
+    """Called by the memory plugin discovery system."""
+    ctx.register_memory_provider(EngramMemoryProvider())

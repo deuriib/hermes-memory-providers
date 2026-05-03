@@ -4,10 +4,10 @@ uv = "latest"
 
 [tasks.bootstrap]
 description = "Bootstrap: install tools, sync deps, install engram plugin"
-run = ["mise install", "uv sync", "bin/hm-install engram"]
+run = ["mise install", "uv sync", "bin/hm-install memory/engram"]
 
 [tasks.install]
-description = "Install all available plugins from the repo"
+description = "Install specific plugin (e.g. engram or memory/engram)"
 run = "bin/hm-install"
 
 [tasks.install-plugin]
@@ -15,7 +15,7 @@ description = "Install a specific plugin by name"
 run = "bin/hm-install"
 
 [tasks.uninstall]
-description = "Uninstall a memory provider plugin"
+description = "Uninstall a plugin (e.g. engram or memory/engram)"
 run = "bin/hm-uninstall"
 
 [tasks.update]

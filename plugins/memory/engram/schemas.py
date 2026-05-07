@@ -1,4 +1,8 @@
-"""Tool schemas — what the LLM sees when deciding to call Engram tools."""
+"""Tool schemas — flat format for Hermes Agent registry.
+
+Hermes Agent wraps these in {"type": "function", "function": {...}}
+automatically via tools/registry.py get_definitions().
+"""
 
 MEM_SEARCH = {
     "name": "mem_search",

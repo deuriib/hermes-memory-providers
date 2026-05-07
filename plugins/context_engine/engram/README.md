@@ -90,6 +90,10 @@ Or use the install script from the monorepo:
 | `ENGRAM_PORT` | `7437` | Engram server port |
 | `ENGRAM_BIN` | `engram` | Path to engram binary |
 
+## Category
+
+See [Context Engines](../context_engine/DESCRIPTION.md) for overview and comparison with other plugin types.
+
 ## Architecture
 
 ```

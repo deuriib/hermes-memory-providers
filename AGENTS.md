@@ -2,33 +2,47 @@
 
 ## Project Info
 
-| | |
-|---|---|
-| **Path** | `~/Work/hermes-memory-providers/` |
-| **Remote** | `https://github.com/deuriib/hermes-memory-providers.git` |
+|            |                                                         |
+| ---------- | ------------------------------------------------------- |
+| **Path**   | `~/Work/hermes-providers/`                              |
+| **Remote** | `https://github.com/deuriib/hermes-providers.git`      |
 
 ## What this repo is
 
-A curated monorepo of plugins for [Hermes Agent](https://github.com/NousResearch/hermes-agent). Organized by category to extend Hermes with memory providers, tools, connectors, and workflows.
+A curated monorepo of plugins for [Hermes Agent](https://github.com/NousResearch/hermes-agent). Organized by category to extend Hermes with memory providers, context engines, tools, connectors, and workflows.
 
 **Why this matters:** Hermes Agent is designed to be extensible. Instead of hunting scattered repositories, this monorepo provides battle-tested plugins with consistent structure, documentation, and quality standards.
 
 ## Plugin Categories
 
-### Memory Providers
-| Plugin | Backend | Status |
-|--------|---------|--------|
-| `memory/engram/` | Engram HTTP API (Go/SQLite) | Stable |
+### Memory Providers (MemoryProvider ABC)
+
+| Plugin             | Backend                     | Status |
+| ------------------ | --------------------------- | ------ |
+| `memory/engram/`   | Engram HTTP API (Go/SQLite) | ✅ Stable |
+
+### Context Engines (ContextEngine plugin)
+
+| Plugin                       | Backend        | Status |
+| ---------------------------- | -------------- | ------ |
+| `context_engine/engram/`     | Engram HTTP API | ✅ Stable |
+
+### Legacy Plugins
+
+| Plugin       | Backend | Status |
+| ------------ | ------- | ------ |
+| `engram/`    | Engram  | ⚠️ Legacy |
 
 ### Tools & Connectors
-*Coming soon — submit yours!*
+
+_Coming soon — submit yours!_
 
 ## Adding a new plugin
 
 ```
-hermes-memory-providers/
+hermes-providers/
   plugins/
-    category/              ← memory, tools, connectors, workflows
+    category/              ← memory, context_engine, tools, connectors, workflows
       plugin-name/         ← one directory per plugin
         __init__.py        ← main class + register() function
         client.py          ← backend client (if needed)
@@ -47,14 +61,16 @@ hermes-memory-providers/
 2. **`client.py`** wraps backend APIs (if applicable)
 
 3. **`plugin.yaml`** metadata:
+
 ```yaml
 name: <plugin-name>
 version: 1.0.0
-type: memory_provider | tool | connector | workflow
-category: memory | tools | connectors | workflows
+type: memory_provider | context_engine | tool | connector | workflow
+category: memory | context_engine | tools | connectors | workflows
 ```
 
-4. **Deploy** with:
+1. **Deploy** with:
+
 ```bash
 cp -r <category>/<plugin>/ ~/.hermes/hermes-agent/plugins/<category>/<plugin>/
 ```
@@ -83,10 +99,16 @@ bin/hm-update
 bin/hm-list
 ```
 
-## Engram plugin notes
+## Engram plugins notes
 
+### Memory Provider (`plugins/memory/engram/`)
 - Requires `engram serve` on `http://127.0.0.1:7437`
 - Session ID derived from Hermes session_id
 - Project name auto-detected from git remote origin
 - Cron guard: skips passive writes for `cron` and `flush` contexts
 - Prefetch: background `/context` fetch via daemon thread
+
+### Context Engine (`plugins/context_engine/engram/`)
+- Provides agent context via Hermes ContextEngine plugin API
+- Enables `/context` command and context prefetch
+- Requires `engram serve` running

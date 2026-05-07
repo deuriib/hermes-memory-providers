@@ -19,7 +19,16 @@ Persistent memory across sessions. [Browse memory plugins →](./plugins/memory/
 
 | Plugin | Backend | Status |
 |--------|---------|--------|
-| [**Engram**](./plugins/memory/engram/) | Go/SQLite HTTP API | ✅ Stable |
+| [**Engram (v2.0)**](./plugins/memory/engram/) | Go/SQLite HTTP API | ✅ Stable |
+| [**Engram (v1.0)**](./plugins/engram/) | Go/SQLite HTTP API | ⚠️ Legacy |
+
+### Context Engine
+
+Agent context management via Engram. [Browse context engine plugins →](./plugins/context_engine/)
+
+| Plugin | Backend | Status |
+|--------|---------|--------|
+| [**Engram ContextEngine**](./plugins/context_engine/engram/) | Engram HTTP API | ✅ Stable |
 
 ### Tools & Connectors
 
@@ -30,7 +39,9 @@ Persistent memory across sessions. [Browse memory plugins →](./plugins/memory/
 ### 1. Browse Plugins
 
 Explore by category:
-- `plugins/memory/` — Persistent storage backends
+- `plugins/memory/` — Persistent storage backends (MemoryProvider ABC)
+- `plugins/context_engine/` — Agent context management (ContextEngine plugin)
+- `plugins/engram/` — Legacy plugins (v1.0 hook-based)
 - `plugins/tools/` — Custom functionality (coming soon)
 - `plugins/connectors/` — External integrations (coming soon)
 - `plugins/workflows/` — Automation patterns (coming soon)
@@ -43,6 +54,10 @@ Explore by category:
 
 # Or use mise tasks
 mise run install memory/engram
+
+# Context engine plugin
+./bin/hm-install context_engine/engram
+mise run install context_engine/engram
 ```
 
 ### 3. Configure

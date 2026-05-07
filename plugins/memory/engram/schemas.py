@@ -240,25 +240,37 @@ MEM_SESSION_END = {
 
 MEM_TIMELINE = {
     "name": "mem_timeline",
-    "description": "Get timeline of observations for a project (recent activity).",
+    "description": (
+        "Get timeline of observations around a specific observation. "
+        "First use mem_search to find observations, then pass the observation id "
+        "to get context before/after that observation."
+    ),
     "parameters": {
         "type": "object",
         "properties": {
-            "project": {"type": "string", "description": "Filter by project name."},
-            "scope": {"type": "string", "description": "Filter by scope (project/personal)."},
-            "limit": {"type": "integer", "description": "Max results (default: 20)."},
+            "observation_id": {
+                "type": "integer",
+                "description": "The observation ID to use as timeline anchor (required).",
+            },
+            "before": {
+                "type": "integer",
+                "description": "Number of observations before the anchor (default: 5).",
+            },
+            "after": {
+                "type": "integer",
+                "description": "Number of observations after the anchor (default: 5).",
+            },
         },
+        "required": ["observation_id"],
     },
 }
 
 MEM_STATS = {
     "name": "mem_stats",
-    "description": "Get memory statistics: total observations, breakdown by type/scope, recent activity.",
+    "description": "Get global memory statistics: total observations, breakdown by type/scope, recent activity.",
     "parameters": {
         "type": "object",
-        "properties": {
-            "project": {"type": "string", "description": "Filter by project name."},
-        },
+        "properties": {},
     },
 }
 

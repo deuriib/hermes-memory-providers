@@ -298,16 +298,23 @@ def mem_search(args: dict) -> str:
 
 def mem_save(args: dict) -> str:
     try:
+        project = _current_project or "unknown"
+        session_id = default_session_id(project)
+
+        # Ensure session exists (foreign key constraint)
+        ensure_session(session_id)
+
         result = _engram_fetch(
             "/observations",
             method="POST",
             body={
+                "session_id": session_id,
                 "title": args.get("title", ""),
                 "content": args.get("content", ""),
                 "type": args.get("type", "learning"),
                 "scope": args.get("scope", "project"),
                 "topic_key": args.get("topic_key"),
-                "project": _current_project,
+                "project": project,
             },
         )
         if result is None:
@@ -372,12 +379,12 @@ def mem_context(args: dict) -> str:
 def mem_session_summary(args: dict) -> str:
     """Save end-of-session summary. Uses POST /observations with type=session_summary."""
     try:
-        # No /sessions/summary endpoint in HTTP API — use mem_save pattern instead.
-        # The MCP handler (mcp.go:1541-1547) does the same: AddObservation with
-        # type="session_summary".
         project = _current_project or "unknown"
         session_id = args.get("session_id") or default_session_id(project)
         content = args.get("content", "")
+
+        # Ensure session exists (foreign key constraint)
+        ensure_session(session_id)
 
         result = _engram_fetch(
             "/observations",
@@ -415,6 +422,10 @@ def mem_save_prompt(args: dict) -> str:
     try:
         project = _current_project or "unknown"
         session_id = args.get("session_id") or default_session_id(project)
+
+        # Ensure session exists (foreign key constraint)
+        ensure_session(session_id)
+
         result = _engram_fetch(
             "/observations",
             method="POST",

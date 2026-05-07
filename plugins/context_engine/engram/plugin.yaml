@@ -1,0 +1,25 @@
+name: engram
+version: 1.0.0
+description: >
+  Engram context engine for Hermes Agent — uses Engram as a persistent knowledge
+  graph instead of lossy summarization. Protects important context across sessions
+  by storing compressed snapshots as structured observations in Engram.
+
+  Activate in config.yaml:
+    context:
+      engine: engram
+
+author: Gentleman Programming
+context_engine:
+  name: engram
+  class: EngramContextEngine
+requires_env:
+  - name: ENGRAM_PORT
+    description: "Port where engram serve runs (default: 7437)"
+    secret: false
+  - name: ENGRAM_BIN
+    description: "Path to engram binary (default: engram)"
+    secret: false
+provides_tools:
+  - engram_recall
+  - engram_search_context

@@ -455,76 +455,84 @@ def mem_save_prompt(args: dict, **kwargs) -> str:
 
 
 def mem_session_start(args: dict, **kwargs) -> str:
-    """Register session start. Endpoint: POST /sessions (creates session record).
-
-    Note: HTTP API doesn't have a dedicated /sessions endpoint — this uses the
-    passive-capture flow to register the session with a "session_start" pseudo-type.
-    The Hermes on_session_start hook handles the real session registration.
-    """
+    """Register session start. Endpoint: POST /sessions"""
     try:
         project = _current_project or "unknown"
         session_id = args.get("id") or default_session_id(project)
-        directory = args.get("directory", "")
+        directory = args.get("directory", _current_directory or "")
 
-        # Use passive capture to register the session
+        # Use proper session creation endpoint
         result = _engram_fetch(
-            "/observations/passive",
+            "/sessions",
             method="POST",
             body={
-                "session_id": session_id,
-                "content": f"Session started: {project}"
-                + (f" | {directory}" if directory else ""),
+                "id": session_id,
                 "project": project,
-                "source": "session_start",
+                "directory": directory,
             },
         )
-        # Passive capture is best-effort — return success even if server unreachable
         if result is None:
             return json.dumps(
                 {
                     "id": None,
-                    "message": f"Session registered locally (engram server may be offline). "
+                    "message": f"Session created locally (engram server may be offline). "
                     f"ID={session_id}, project={project}",
                 }
             )
+        # Handle potential error response
+        if isinstance(result, dict) and result.get("error"):
+            return json.dumps(result)
         return json.dumps(result, indent=2)
     except Exception as e:
         return json.dumps({"error": str(e)})
 
 
 def mem_session_end(args: dict, **kwargs) -> str:
-    """Mark session as completed. Best-effort via passive capture."""
+    """Mark session as completed. Endpoint: POST /sessions/{id}/end"""
     try:
         project = _current_project or "unknown"
         session_id = args.get("id") or default_session_id(project)
+        summary = args.get("summary", "")
 
         result = _engram_fetch(
-            "/observations/passive",
+            f"/sessions/{session_id}/end",
             method="POST",
-            body={
-                "session_id": session_id,
-                "content": f"Session ended: {project}",
-                "project": project,
-                "source": "session_end",
-            },
+            body={"summary": summary} if summary else {},
         )
         if result is None:
             return json.dumps(
                 {"message": f"Session end noted locally. ID={session_id}"}
             )
+        # Handle potential error response
+        if isinstance(result, dict) and result.get("error"):
+            return json.dumps(result)
         return json.dumps(result, indent=2)
     except Exception as e:
         return json.dumps({"error": str(e)})
 
 
 def mem_timeline(args: dict, **kwargs) -> str:
-    """Get timeline of observations for a project. Endpoint: GET /timeline?project=...&scope=...&limit=..."""
+    """Get timeline of observations. Endpoint: GET /timeline?observation_id=...
+
+    Requires an observation_id as anchor. Use mem_search to find observations,
+    then pass the most recent observation's id to get the timeline around it.
+    """
     try:
-        params = {"project": args.get("project", _current_project or "")}
-        if args.get("scope"):
-            params["scope"] = args["scope"]
-        if args.get("limit"):
-            params["limit"] = str(args["limit"])
+        obs_id = args.get("observation_id")
+        if not obs_id:
+            return json.dumps(
+                {
+                    "error": "observation_id is required",
+                    "hint": "Use mem_search to find observations, then pass the observation id to mem_timeline",
+                }
+            )
+
+        params = {"observation_id": str(obs_id)}
+        if args.get("before"):
+            params["before"] = str(args["before"])
+        if args.get("after"):
+            params["after"] = str(args["after"])
+
         result = _engram_fetch("/timeline", method="GET", params=params)
         if result is None:
             return json.dumps({"error": "Engram server not reachable."})
@@ -534,16 +542,14 @@ def mem_timeline(args: dict, **kwargs) -> str:
 
 
 def mem_stats(args: dict, **kwargs) -> str:
-    """Get memory statistics.
-
-    The HTTP server does not expose a /stats endpoint. Use the MCP server
-    (engram mcp --tools=agent) to access this capability."""
-    return json.dumps(
-        {
-            "error": "mem_stats is not available via the Engram HTTP API.",
-            "details": "The Hermes plugin previously called GET /stats, but that route is not exposed by the Engram HTTP server.",
-        }
-    )
+    """Get memory statistics. Endpoint: GET /stats"""
+    try:
+        result = _engram_fetch("/stats", method="GET")
+        if result is None:
+            return json.dumps({"error": "Engram server not reachable."})
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return json.dumps({"error": str(e)})
 
 
 def mem_judge(args: dict, **kwargs) -> str:

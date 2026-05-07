@@ -92,26 +92,26 @@ class EngramMemoryProvider(MemoryProvider):
         config_path = Path(hermes_home) / "engram.json"
         config_path.write_text(json.dumps(values, indent=2))
 
-    def get_tool_schemas(self) -> Dict[str, Dict]:
-        """Return tool schemas for injection."""
-        return {
-            "mem_search": schemas.MEM_SEARCH,
-            "mem_save": schemas.MEM_SAVE,
-            "mem_update": schemas.MEM_UPDATE,
-            "mem_delete": schemas.MEM_DELETE,
-            "mem_context": schemas.MEM_CONTEXT,
-            "mem_session_summary": schemas.MEM_SESSION_SUMMARY,
-            "mem_get_observation": schemas.MEM_GET_OBSERVATION,
-            "mem_save_prompt": schemas.MEM_SAVE_PROMPT,
-            "mem_session_start": schemas.MEM_SESSION_START,
-            "mem_session_end": schemas.MEM_SESSION_END,
-            "mem_timeline": schemas.MEM_TIMELINE,
-            "mem_judge": schemas.MEM_JUDGE,
-            "mem_doctor": schemas.MEM_DOCTOR,
-            "mem_current_project": schemas.MEM_CURRENT_PROJECT,
-            "mem_capture_passive": schemas.MEM_CAPTURE_PASSIVE,
-            "mem_stats": schemas.MEM_STATS,
-        }
+    def get_tool_schemas(self) -> List[Dict]:
+        """Return tool schemas in OpenAI function-calling format."""
+        return [
+            schemas.MEM_SEARCH,
+            schemas.MEM_SAVE,
+            schemas.MEM_UPDATE,
+            schemas.MEM_DELETE,
+            schemas.MEM_CONTEXT,
+            schemas.MEM_SESSION_SUMMARY,
+            schemas.MEM_GET_OBSERVATION,
+            schemas.MEM_SAVE_PROMPT,
+            schemas.MEM_SESSION_START,
+            schemas.MEM_SESSION_END,
+            schemas.MEM_TIMELINE,
+            schemas.MEM_JUDGE,
+            schemas.MEM_DOCTOR,
+            schemas.MEM_CURRENT_PROJECT,
+            schemas.MEM_CAPTURE_PASSIVE,
+            schemas.MEM_STATS,
+        ]
 
     def handle_tool_call(self, tool_name: str, args: Dict) -> str:
         """Handle tool calls by routing to appropriate handler."""

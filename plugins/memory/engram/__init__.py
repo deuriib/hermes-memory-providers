@@ -243,7 +243,7 @@ This is NOT optional. If you skip this, the next session starts blind.
         thread = threading.Thread(target=_prefetch, daemon=True)
         thread.start()
 
-    def sync_turn(self, user_content: str, assistant_content: str) -> None:
+    def sync_turn(self, user_content: str, assistant_content: str, **kwargs) -> None:
         """MUST be non-blocking. Persist conversation turn."""
         def _sync():
             try:

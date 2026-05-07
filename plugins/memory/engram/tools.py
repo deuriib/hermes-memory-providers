@@ -223,7 +223,7 @@ def ensure_session(session_id: str) -> None:
             "directory": _current_directory,
         },
     )
-    if response is not None and response.get("status", 200) < 400:
+    if response is not None and str(response.get("status", 200)) not in ("error", "failed"):
         _known_sessions.add(session_id)
 
 
